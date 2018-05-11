@@ -23,10 +23,91 @@ use std::fmt;
 pub const GREENWICH_MERIDIAN: f64 = 0.0;
 pub const INTERNATIONAL_DATE_LINE: f64 = 180.0;
 pub const LATITUDE_OF_EQUATOR: f64 = 0.0;
-pub const NORTH_MOST_LATITUDE: f64 = 85.051129; // FIXME
+pub const NORTH_MOST_LATITUDE: f64 = 85.0511287798066;  // Wikipedia says 85.051129
 pub const SOUTH_MOST_LATITUDE: f64 = -NORTH_MOST_LATITUDE; // FIXME
 pub const ONE_EIGHTY_OVER_PI : f64 = 57.29577951308;
 
+///
+/// Represents an angle in [Radians](https://en.wikipedia.org/wiki/Radian).
+/// This ought to have exactly the same run time performance as an f64 float
+/// but by wrapping it up as a type avoids any errors due to accidently passing
+/// an angle in radians where a degree is expected and vice versa.
+///
+#[derive(Clone, Copy)]
+#[derive(Debug, PartialEq)]
+pub struct Radian {
+    pub radians : f64
+}
+impl Radian {
+    pub fn new (value : f64) -> Radian {
+        Radian { radians : value }
+    }
+    pub fn zero () -> Radian {
+        Radian::new (0.0)
+    }
+    ///
+    /// Convert an angle in [Radians](https://en.wikipedia.org/wiki/Radian) to one in degrees.
+    ///
+    /// ```
+    /// use libwebmap::webmap::Radian;
+    /// use std::f64::consts::PI;
+    /// assert_eq!(Radian::new(0.0).to_degrees (), 0.0);
+    /// assert_eq!(Radian::new(PI).to_degrees (), 180.0);
+    /// assert_eq!(Radian::new(PI/2.0).to_degrees (), 90.0);
+    /// assert_eq!(Radian::new(-PI).to_degrees(), -180.0);
+    /// ```
+    ///
+    #[inline]
+    pub fn to_degrees(&self) -> f64 {
+        return self.radians * 180.0 / PI;
+    }
+    #[inline]
+    pub fn to_f64(&self) -> f64 {
+        return self.radians;
+    }
+}
+
+///
+/// Represents an angle in degrees (of arc).
+/// This ought to have exactly the same run time performance as an f64 float.
+///
+#[derive(Clone, Copy)]
+#[derive(Debug)]
+#[derive(PartialEq)]
+pub struct Degree {
+    pub degrees: f64
+}
+impl Degree {
+    pub fn new (value : f64) -> Degree {
+        Degree { degrees : value }
+    }
+    pub fn zero () -> Degree {
+        Degree { degrees : 0.0}
+    }
+
+    ///
+    /// Convert an angle in degrees to one in [Radians](https://en.wikipedia.org/wiki/Radian).
+    ///
+    ///  ## Examples
+    ///
+    /// ```
+    /// use std::f64::consts::PI;
+    /// use libwebmap::webmap::Degree;
+    /// assert_eq!(Degree::zero().to_radians (), 0.0);
+    /// assert_eq!(Degree::new(180.0).to_radians (), PI);
+    /// assert_eq!(Degree::new(90.0).to_radians (), PI/2.0);
+    /// assert_eq!(Degree::new(-180.).to_radians (), -PI);
+    /// ```
+    ///
+    #[inline]
+    pub fn to_radians(&self) -> f64 {
+        return self.degrees / 180.0 * PI;
+    }
+    #[inline]
+    pub fn to_f64(&self) -> f64 {
+        return self.degrees;
+    }
+}
 ///
 ///  A coordinate, in [Radians](https://en.wikipedia.org/wiki/Radian), on the surface of the earth (or another such body),
 ///
@@ -188,7 +269,9 @@ impl LonLat {
     /// use libwebmap::webmap::round6_f64;
     /// use libwebmap::webmap::LonLat;
     /// use libwebmap::webmap::NORTH_MOST_LATITUDE;
+    /// use libwebmap::webmap::SOUTH_MOST_LATITUDE;
     /// assert_eq!(round6_f64(LonLat::radians_to_degrees(LonLat::max_latitude()) - NORTH_MOST_LATITUDE), 0.0);
+    /// assert_eq!(round6_f64(-LonLat::radians_to_degrees(LonLat::max_latitude()) - SOUTH_MOST_LATITUDE), 0.0);
     /// ```
     ///
     pub fn max_latitude ()-> f64  {
@@ -369,6 +452,7 @@ impl PointXY {
     }
     ///
     ///  Rounds the latitude and longitude values.
+    ///  This useful in tests for comparing floating point numbers for equality.
     ///
     ///  ```
     ///  use libwebmap::webmap::LonLat;
@@ -598,6 +682,13 @@ impl MapProjection for Mercator {
 
 pub struct WebMercator {}
 
+impl WebMercator {
+    pub fn top_left () -> PointXY { PointXY::new(0.0,-0.5) }
+    pub fn bottom_left () -> PointXY { PointXY::new(0.0,0.5) }
+    pub fn centre () -> PointXY { PointXY::new(0.5,0.) }
+    pub fn top_right () -> PointXY { PointXY::new(1.0,-0.5) }
+    pub fn bottom_right () -> PointXY { PointXY::new(1.0,0.5) }
+}
 impl MapProjection for WebMercator {
 
     ///
@@ -615,23 +706,18 @@ impl MapProjection for WebMercator {
     /// use std::f64::INFINITY;
     ///
     /// let projection = WebMercator {};
-    /// assert_eq!(projection.to_point_xy(LonLat::zero()).round7(), PointXY::new (PI,0.0).round7());
+    /// assert_eq!(projection.to_point_xy(LonLat::zero()).round7(), PointXY::new (PI,PI).round7());
     /// assert_eq!(projection.to_point_xy(LonLat::new(-PI,-PI/2.)).round7(), PointXY::new (0.,-INFINITY));
     /// assert_eq!(projection.to_point_xy(LonLat::new(PI,PI/2.)).round7(), PointXY::new (2.0*PI,INFINITY).round7());
     /// ```
     ///
     fn to_point_xy(&self, lonlat : LonLat) -> PointXY {
-        let x = lonlat.lon + PI;  // FIXME PI is centre.x or lambda_0
-        let tan = |angle : f64| {
-            use std::f64::INFINITY;
-            let t = angle.tan();
-            let big_value = 1e10;
-            match t > big_value {
-                true => INFINITY,
-                false => t
-            }
+        use std::f64::INFINITY;
+        let x = lonlat.lon + self.centre().lon;  // FIXME PI is centre.x or lambda_0
+        let y = match lonlat.lat.abs() > LonLat::max_latitude () {
+            true => INFINITY * lonlat.lat.signum(),
+            false => PI - (lonlat.lat / 2.0 + PI / 4.0).tan().ln()  // Does PI- term refer to centre of map self.centre().lat
         };
-        let y = tan (lonlat.lat/2.0 + PI/4.0).ln();
         PointXY::new(x, y)
     }
 
@@ -648,13 +734,22 @@ impl MapProjection for WebMercator {
     /// use libwebmap::webmap::MapProjection;
     /// let projection = WebMercator {};
     /// for lonlat in LonLat::significant_points().iter() {
-    ///    assert_eq!(projection.to_lonlat(projection.to_point_xy(*lonlat)).round7(), lonlat.round7());
+    ///   assert_eq!(projection.to_lonlat(projection.to_point_xy(*lonlat)).round7(), lonlat.round7());
     /// }
     /// ```
     ///
     fn to_lonlat (&self, point : PointXY) -> LonLat {
-        let lon = point.x - PI;  // FIXME PI is centre.x or lambda_0
-        let lat = 2.0*(point.y.exp().atan() - PI/4.0);
+        let lon = point.x - self.centre().lon;
+        let lat : f64;
+        if point.y.is_infinite() {
+            if point.y.is_sign_positive() {
+                lat = PI/2.0;
+            } else {
+                lat = -PI/2.0;
+            }
+        } else {
+            lat = 2.0 * ((point.y - PI).exp().atan() - PI / 4.0); // FIXME Is PI the centre.y
+        }
         return LonLat::new (lon, lat);
     }
 }
@@ -795,6 +890,21 @@ impl<'a> WebMap<'a> {
         PointXY::new (xy.x * self.zoom_scaling, xy.y * self.zoom_scaling)
     }
 
+    ///  ## Examples
+    ///
+    /// ```
+    /// // Note: this test duplicates one of those for the Mercator.
+    /// use libwebmap;
+    /// use libwebmap::webmap::PointXY;
+    /// use libwebmap::webmap::Mercator;
+    /// use libwebmap::webmap::LonLat;
+    /// use libwebmap::webmap::MapProjection;
+    /// let projection = Mercator {};
+    /// for lonlat in LonLat::significant_points().iter() {
+    ///    assert_eq!(projection.to_lonlat(projection.to_point_xy(*lonlat)).round7(), lonlat.round7());
+    /// }
+    /// ```
+    ///
     pub fn to_lonlat (&self, point : PointXY) -> LonLat {
         let xy = PointXY::new (point.x /self.zoom_scaling, point.y / self.zoom_scaling);
         self.projection.to_lonlat (xy)
@@ -858,8 +968,8 @@ mod tests {
         let atlantic : LonLat = LonLatD::new (GREENWICH_MERIDIAN, LATITUDE_OF_EQUATOR).to_radians ();
         let pacific : LonLat = LonLatD::new (INTERNATIONAL_DATE_LINE, LATITUDE_OF_EQUATOR).to_radians ();
 
-        assert_float_eq!(webmap.to_point_xy (atlantic), PointXY::new(0.5,0.));
-        assert_float_eq!(webmap.to_point_xy (pacific), PointXY::new(1.0,0.));
+        assert_float_eq!(webmap.to_point_xy (atlantic), PointXY::new(0.5,0.5));
+        assert_float_eq!(webmap.to_point_xy (pacific), PointXY::new(1.0,0.5));
     }
     #[test]
     fn should_project_to_web_mercator2 () {
@@ -870,8 +980,8 @@ mod tests {
         let east_equator : LonLat  = LonLatD::new (-90.0, LATITUDE_OF_EQUATOR).to_radians ();
         let west_equator : LonLat  = LonLatD::new (90.0, LATITUDE_OF_EQUATOR).to_radians ();
 
-        assert_float_eq!(webmap.to_point_xy (east_equator), PointXY::new(0.25,0.));  // 0.25,0.5
-        assert_float_eq!(webmap.to_point_xy (west_equator), PointXY::new(0.75,0.));  // 0.75,0.5
+        assert_float_eq!(webmap.to_point_xy (east_equator), PointXY::new(0.25,0.5));  // 0.25,0.5
+        assert_float_eq!(webmap.to_point_xy (west_equator), PointXY::new(0.75,0.5));  // 0.75,0.5
     }
     #[test]
     fn should_project_to_web_mercator3_extreme_latitudes () {
@@ -884,8 +994,8 @@ mod tests {
 
         // Is the international date line 0 or 1? Extreme left or extreme right?
         // TODO Are these latitudes correct?  Should from 0 to 1
-        assert_eq!(webmap.to_point_xy (south_pacific).round7(), PointXY::new(1.,-0.5).round7());  // 1.,1.
-        assert_eq!(webmap.to_point_xy (north_pacific).round7(), PointXY::new(1., 0.5).round7());  // 1.,0.
+        assert_eq!(webmap.to_point_xy (north_pacific).round7(), PointXY::new(1., 0.0).round7());  // 1.,0.
+        assert_eq!(webmap.to_point_xy (south_pacific).round7(), PointXY::new(1.,1.0).round7());  // 1.,1.
     }
     #[test]
     fn should_project_to_web_mercator4_poles () {
