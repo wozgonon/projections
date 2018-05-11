@@ -603,11 +603,38 @@ impl MapProjection for WebMercator {
     ///
     ///  Performs the basic web mercator transformation, not taking zoom or tiling into account.
     ///
+    ///  ## Examples
+    ///
+    /// ```
+    /// use libwebmap;
+    /// use libwebmap::webmap::PointXY;
+    /// use libwebmap::webmap::WebMercator;
+    /// use libwebmap::webmap::LonLat;
+    /// use libwebmap::webmap::MapProjection;
+    /// use std::f64::consts::PI;
+    /// use std::f64::INFINITY;
+    ///
+    /// let projection = WebMercator {};
+    /// assert_eq!(projection.to_point_xy(LonLat::zero()).round7(), PointXY::new (PI,0.0).round7());
+    /// assert_eq!(projection.to_point_xy(LonLat::new(-PI,-PI/2.)).round7(), PointXY::new (0.,-INFINITY));
+    /// assert_eq!(projection.to_point_xy(LonLat::new(PI,PI/2.)).round7(), PointXY::new (2.0*PI,INFINITY).round7());
+    /// ```
+    ///
     fn to_point_xy(&self, lonlat : LonLat) -> PointXY {
         let x = lonlat.lon + PI;  // FIXME PI is centre.x or lambda_0
-        let y = (lonlat.lat/2.0 + PI/4.0).tan().ln();
+        let tan = |angle : f64| {
+            use std::f64::INFINITY;
+            let t = angle.tan();
+            let big_value = 1e10;
+            match t > big_value {
+                true => INFINITY,
+                false => t
+            }
+        };
+        let y = tan (lonlat.lat/2.0 + PI/4.0).ln();
         PointXY::new(x, y)
     }
+
     ///
     ///  Performs the basic inverse web mercator transformation, not taking zoom or tiling into account.
     ///
@@ -810,7 +837,7 @@ macro_rules! assert_float_eq {
 mod tests {
 
     use std::f64::INFINITY;
-    use std::f64::consts::PI;
+    //use std::f64::consts::PI;
     use webmap::PointXY;
     use webmap::LonLat;
     use webmap::LonLatD;
@@ -834,7 +861,7 @@ mod tests {
         assert_float_eq!(webmap.to_point_xy (atlantic), PointXY::new(0.5,0.));
         assert_float_eq!(webmap.to_point_xy (pacific), PointXY::new(1.0,0.));
     }
-    //    #[test]
+    #[test]
     fn should_project_to_web_mercator2 () {
         let zoom = 0;
         let projection = WebMercator {};
@@ -855,9 +882,10 @@ mod tests {
         let north_pacific : LonLat  = LonLatD::new (INTERNATIONAL_DATE_LINE, NORTH_MOST_LATITUDE).to_radians ();
         let south_pacific : LonLat  = LonLatD::new (INTERNATIONAL_DATE_LINE, SOUTH_MOST_LATITUDE).to_radians ();
 
-        use std::f64::NAN;
-        assert_float_eq!(webmap.to_point_xy (south_pacific), PointXY::new(1.,1.));  // 1.,1.
-        assert_float_eq!(webmap.to_point_xy (north_pacific), PointXY::new(0.5, NAN));  // 1.,0.
+        // Is the international date line 0 or 1? Extreme left or extreme right?
+        // TODO Are these latitudes correct?  Should from 0 to 1
+        assert_eq!(webmap.to_point_xy (south_pacific).round7(), PointXY::new(1.,-0.5).round7());  // 1.,1.
+        assert_eq!(webmap.to_point_xy (north_pacific).round7(), PointXY::new(1., 0.5).round7());  // 1.,0.
     }
     #[test]
     fn should_project_to_web_mercator4_poles () {
@@ -865,10 +893,10 @@ mod tests {
         let projection = WebMercator {};
         let webmap = WebMap::new (zoom, Box::new(projection));
 
-        let north_pole : LonLat  = LonLatD::new (GREENWICH_MERIDIAN, PI/2.).to_radians ();
-        let south_pole : LonLat  = LonLatD::new (GREENWICH_MERIDIAN, PI/2.).to_radians ();
+        let north_pole : LonLat  = LonLatD::new (GREENWICH_MERIDIAN, 90.).to_radians ();
+        let south_pole : LonLat  = LonLatD::new (GREENWICH_MERIDIAN, -90.).to_radians ();
 
-        assert_float_eq!(webmap.to_point_xy (south_pole), PointXY::new(0.5, -INFINITY));
-        assert_float_eq!(webmap.to_point_xy (north_pole), PointXY::new(0.5, INFINITY));
+        assert_eq!(webmap.to_point_xy (north_pole).round7(), PointXY::new(0.5, INFINITY).round7());
+        assert_eq!(webmap.to_point_xy (south_pole).round7(), PointXY::new(0.5, -INFINITY).round7());
     }
 }
