@@ -16,7 +16,8 @@ fn main() {
     let simplifier = RamerDouglasPeuker::new (epsilon, Box::new (metric));
     for nn in 0..20 {
         let sides = 1 << nn;
-        let polygon = LonLat::make_regular_convex_polygon (sides);
+	let radius = 100.;
+        let polygon = LonLat::make_regular_convex_polygon (sides, radius);
     	let simplified_polygon = webmap.simplify_lonlats (&polygon, &simplifier);
     	println!("Polygon points: {} simplified to: {}", polygon.len (), simplified_polygon.len ());
     }
