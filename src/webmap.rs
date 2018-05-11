@@ -846,7 +846,7 @@ mod tests {
         assert_float_eq!(webmap.to_point_xy (east_equator), PointXY::new(0.25,0.));  // 0.25,0.5
         assert_float_eq!(webmap.to_point_xy (west_equator), PointXY::new(0.75,0.));  // 0.75,0.5
     }
-    //    #[test]
+    #[test]
     fn should_project_to_web_mercator3_extreme_latitudes () {
         let zoom = 0;
         let projection = WebMercator {};
@@ -859,7 +859,7 @@ mod tests {
         assert_float_eq!(webmap.to_point_xy (south_pacific), PointXY::new(1.,1.));  // 1.,1.
         assert_float_eq!(webmap.to_point_xy (north_pacific), PointXY::new(0.5, NAN));  // 1.,0.
     }
-    //    #[test]
+    #[test]
     fn should_project_to_web_mercator4_poles () {
         let zoom = 0;
         let projection = WebMercator {};
