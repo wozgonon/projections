@@ -74,11 +74,12 @@
 \lambda & \text{\ is the longitude in radians} \\
 \psi & \text{\ is the latitude in radians.} \\
 \\
-\varphi_{\text{max}} &= \left[2\arctan(e^{\pi}) - \frac{\pi}{2}\right]    \text{\ Latitude at which full map becomes a square} \\
+\varphi_{\text{max}} &= \left[2\arctan(e^{\pi}) - \frac{\pi}{2}\right]    \text{\ Latitude at which full map becomes a square.} \\
 &= 85.051129 \text{\_degrees}
 \end{align*}
 
-Google Maps cannot show the poles because Mercator projects the poles at infinity,. Instead it cuts off coverage at 85.051129 north and south (the latitudes at which the full map becomes a square).
+The latitude is projected to infinity at the poles, $y\to\infty$.
+So the maximum and minimum latitudes are $\pm\phi_{max}$.
 
 
 \end{document}
