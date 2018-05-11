@@ -1,0 +1,14 @@
+[package]
+name = "projections"
+version = "0.1.0"
+authors = ["jb <wozgonon@gmail.com>"]
+
+[lib]
+name = "libwebmap"
+path = "src/lib.rs"
+
+[[bin]]
+name = "webmap"
+path = "bin/webmap.rs"
+
+[dependencies]
