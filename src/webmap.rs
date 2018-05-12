@@ -452,18 +452,21 @@ impl PointXY {
     }
     ///
     /// Returns the Pixel coordinates used by [Tiling](https://en.wikipedia.org/wiki/Tiled_web_map).
+    /// In principle this ought to return unsigned integers but integers do not have a good value for
+    /// infinity so the function returns floating point numbers.   (The webmercator projection for example
+    /// can return infinity at the poles).
     ///
     /// ## Examples
     ///
     /// ```
     /// use libwebmap::webmap::PointXY;
     /// let (x, y) = PointXY::new(0.5, 0.5).to_pixel_coordinates();
-    /// assert_eq!(x, 128);
-    /// assert_eq!(y, 128);
+    /// assert_eq!(x, 128.);
+    /// assert_eq!(y, 128.);
     /// ```
     ///
-    pub fn to_pixel_coordinates (&self) -> (i32,i32) {
-        ((self.x * 256.).floor() as i32, (self.y * 256.).floor() as i32)
+    pub fn to_pixel_coordinates (&self) -> (f64,f64) {
+        ((self.x * 256.).floor(), (self.y * 256.).floor())
     }
 
     ///
