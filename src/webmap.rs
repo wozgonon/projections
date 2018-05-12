@@ -451,6 +451,22 @@ impl PointXY {
         (dx, dy)
     }
     ///
+    /// Returns the Pixel coordinates used by [Tiling](https://en.wikipedia.org/wiki/Tiled_web_map).
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use libwebmap::webmap::PointXY;
+    /// let (x, y) = PointXY::new(0.5, 0.5).to_pixel_coordinates();
+    /// assert_eq!(x, 128);
+    /// assert_eq!(y, 128);
+    /// ```
+    ///
+    pub fn to_pixel_coordinates (&self) -> (i32,i32) {
+        ((self.x * 256.).floor() as i32, (self.y * 256.).floor() as i32)
+    }
+
+    ///
     ///  Rounds the latitude and longitude values.
     ///  This useful in tests for comparing floating point numbers for equality.
     ///
@@ -812,8 +828,9 @@ impl MapProjection for Sinusoidal {
 /// http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
 
 pub struct WebMap<'a> {
-    projection : Box<MapProjection + 'a>,
-    zoom_scaling : f64
+    zoom : u32,  // 0 to 23
+    zoom_scaling : f64,
+    projection : Box<MapProjection + 'a>
 }
 
 impl<'a> WebMap<'a> {
@@ -823,7 +840,7 @@ impl<'a> WebMap<'a> {
     ///
     pub fn new (zoom : u32, projection : Box<MapProjection + 'a>) -> WebMap<'a> {
         let zoom_scaling =  2.0_f64.powi(zoom as i32) / 2.0 / PI;
-        WebMap { projection : projection, zoom_scaling : zoom_scaling }
+        WebMap { zoom : zoom, projection : projection, zoom_scaling : zoom_scaling }
     }
 
     pub  fn simplify_lonlats (&self, lonlats : &Vec<LonLat>, simplifier : &Simplifier) -> Box<Vec<LonLat>> {
@@ -833,6 +850,57 @@ impl<'a> WebMap<'a> {
         return self.points_xy_to_lonlats (&simplified_xys);
     }
 
+    ///
+    /// Returns the number of [Tiles](https://en.wikipedia.org/wiki/Tiled_web_map) for this
+    /// map for the given zoom level.
+    ///
+    /// For zoom level 0 there is only one 1 (1x1) tile for the whole world, for zoom level 1
+    /// the number of tiles doubles in each direction (2x2), and so on.
+    ///
+    ///  See [maptiler](http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/)
+    ///
+    /// ```
+    /// use libwebmap::webmap::WebMercator;
+    /// use libwebmap::webmap::WebMap;
+    /// use libwebmap::webmap::MapProjection;
+    /// assert_eq!(WebMap::new (0, Box::new(WebMercator{})).number_of_tiles(), (1, 1));
+    /// assert_eq!(WebMap::new (1, Box::new(WebMercator{})).number_of_tiles(), (2, 2));
+    /// assert_eq!(WebMap::new (2, Box::new(WebMercator{})).number_of_tiles(), (4, 4));
+    /// assert_eq!(WebMap::new (10, Box::new(WebMercator{})).number_of_tiles(), (1024, 1024));
+    /// ```
+    ///
+    pub fn number_of_tiles (&self) -> (u32, u32) {
+        (1<< self.zoom, 1<<self.zoom)
+    }
+
+    ///
+    /// Returns the number of [Pixels](https://en.wikipedia.org/wiki/Tiled_web_map) for this
+    /// map for the given zoom level.  This assumes each tile has 256x256 pixels.
+    ///
+    ///  (Pixels should not be confused with the pixel resolution of a screen that displays a map,
+    ///   rather they refer to the resolution of the projected map image itself.
+    ///   For zoom level 0, the whole world is represented in a single (low resolution) 256x256 tile.
+    ///   For zoom level 1, the whole world is represented at a higher resolution of 512x512, by four
+    ///   separate tiles (each with a resolution of 256x256).
+    ///
+    /// (This system may be refered to as pyramid Coordinates, at the top of the pyramid is
+    ///  the low resolution 256x256 zoom=0 single tile map, at the bottom of the pyramid is the
+    ///  256*2^20x256*2^20 zoom=20 map with 2^20x*2^20 tiles.)
+    ///
+    /// ```
+    /// use libwebmap::webmap::WebMercator;
+    /// use libwebmap::webmap::WebMap;
+    /// use libwebmap::webmap::MapProjection;
+    /// assert_eq!(WebMap::new (0, Box::new(WebMercator{})).number_of_pixels(), (256, 256));
+    /// assert_eq!(WebMap::new (1, Box::new(WebMercator{})).number_of_pixels(), (512, 512));
+    /// assert_eq!(WebMap::new (2, Box::new(WebMercator{})).number_of_pixels(), (1024, 1024));
+    /// assert_eq!(WebMap::new (10, Box::new(WebMercator{})).number_of_pixels(), (1024*256, 1024*256));
+    /// ```
+    ///
+    pub fn number_of_pixels (&self) -> (u32, u32) {
+        let (x, y) = self.number_of_tiles();
+        (x*256, y*256)
+    }
     ///
     /// Project sequence of points to Web Mercator
     ///
@@ -863,7 +931,7 @@ impl<'a> WebMap<'a> {
     }
 
     ///
-    ///  Project the point to a Web Mercator (Pyramid) Coordinate.
+    ///  Project a point to a Web Mercator (Pyramid) Coordinate.
     ///
     ///  # Examples
     ///
