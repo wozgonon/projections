@@ -5,6 +5,7 @@ extern crate libwebmap;
 //use libwebmap::webmap::WebMap;
 use libwebmap::webmap::LonLatD;
 use libwebmap::webmap::WebMercator;
+use libwebmap::webmap::round7;
 use std::env::args;
 
 ///
@@ -23,73 +24,125 @@ fn main() {
     let mut count = 0;
     for arg in  args () {
         if count > 0 {
-            let path = arg;  /// Name of a file containing Geojson
-            println!("Reading file: {}", path);
-            let mut file = File::open(path).unwrap();
-            let mut data = String::new();
-            use std::io::Read;
-            file.read_to_string(&mut data).unwrap();
+            let path = arg;  // Name of a file containing Geojson
+            let mut reader = GeoJsonReader::new ();
 
-            match read_geojson(&data) {
-                Ok(v) => println!("ok {:?}", v),
-                Err(message) => println!("err {}", message),
+            match reader.read_from_file(&path) {
+                Ok(_) => eprintln!("Read file successfully: {}", path),
+                Err(message) => eprintln!("Error while reading geojson from file {} : {}", path, message),
             }
         }
         count = count + 1;
     }
 }
 
-fn read_geojson(data : &String) -> Result<(), Error> {
 
+struct GeoJsonReader {
+    features: u32,
+    projection :  WebMercator
+}
 
-    // Parse the string of data into serde_json::Value.
-    let v: Value = serde_json::from_str(&data)?;
+impl GeoJsonReader {
+    pub fn new() -> GeoJsonReader {
+        GeoJsonReader { features: 0, projection: WebMercator {} }
+    }
+    pub fn read_from_file(&mut self, path: &String) -> Result<(), Error> {
+        println!("Reading file: {}", path);
+        let mut file = File::open(path).unwrap();
+        let mut data = String::new();
+        use std::io::Read;
+        file.read_to_string(&mut data).unwrap();
+        self.read_from_string(&data)
+    }
+    fn get_type  (v :  &Value) -> String {
+        let t = v["type"].to_string();
+        t.trim_matches('"').to_string()
+    }
+    pub fn read_from_string(&mut self, data: &String) -> Result<(), Error> {
 
-    let feature_collection = "FeatureCollection";
-    let typ = v["type"].to_string();
-    println!("Type {}", typ);
+        let v : Value = serde_json::from_str(&data)?;
+        let typ = GeoJsonReader::get_type (&v);
+        eprintln!("Type '{}' {}", typ, typ == "FeatureCollection");
 
-    let projection = WebMercator {};
+        match &typ as &str {
+            "FeatureCollection" => {
+                let features = &v["features"];
+                let feature_array = features.as_array().unwrap();
+                self.features = 0;
+                for feature in feature_array {
+                    self.read_feature_collection(feature);
+                }
+            },
+            _ => eprintln!("Expected a FeatureCollection, not: {}", typ)
+        }
+        Ok(())
+    }
 
-    match typ {
-        feature_collection => {
-            let features = &v["features"];
-            //use serde::de::Deserializer;
-            let feature_array = features.as_array().unwrap();
-            //for xx = 0..feature_array.length()
-            let mut ff = 0;
-            for feature in feature_array{
-                ff = ff + 1;
-                let geometry = &feature["geometry"];
-                let typ = geometry["type"].to_string();
-                println!("Feature: {}  geometry type={}", ff, typ);
-                let multipolygon = "MultiPolygon";
-                match typ {
-                    multipolygon => {
-                        let mut pp = 0;
-                        let polygons = geometry["coordinates"].as_array().unwrap();
-                        for polygon in polygons {
-                            pp = pp + 1;
-                            println!("Feature: {} Polygon: {}", ff, pp);
-                            let ring_array= polygon.as_array().unwrap();
-                            let mut rr = 0;
-                            for ring in ring_array {
-                                rr = rr + 1;
-                                println!("Feature: {} Polygon: {} Ring: {}", ff, pp, rr);
-                                for coordinate in ring.as_array().unwrap() {
-                                    let lon = coordinate[0].as_f64().unwrap();
-                                    let lat = coordinate[1].as_f64().unwrap();
-                                    let lonlat = LonLatD::new(lon, lat).to_radians ();
-                                    use libwebmap::webmap::MapProjection;
-                                    let point = projection.to_point_xy (lonlat);
-                                    println!("Coordinate {} ->  lonlat={}   ->    point={}", coordinate, lonlat.round7(), point.round7());
-                                }
-                            }
-                        }
-                    }
+    fn read_feature_collection(&mut self, feature : &Value) {
+        self.features = self.features + 1;
+        let geometry = &feature["geometry"];
+        let typ = GeoJsonReader::get_type (&geometry);
+        eprintln!("Feature: {}  geometry type={}", self.features, typ);
+        match typ.as_ref() {
+            "MultiPolygon" => {
+                self.read_multi_polygon(geometry)
+            },
+            "MultiLineString" => {
+                // For type "MultiLineString", the "coordinates" member must be an array of LineString coordinate arrays.
+                eprint!("Handling of GeoJson type '{}' not yet implemented", typ);
+            },
+            "Point" => {
+                //  For type "Point", the "coordinates" member must be a single position.
+            },
+            "MultiPoint" => {
+                //For type "MultiPoint", the "coordinates" member must be an array of positions.
+                eprint!("Handling of GeoJson type '{}' not yet implemented", typ);
+            },
+            "GeometryCollection" => {
+                // A GeoJSON object with type "GeometryCollection" is a geometry object which represents a collection of geometry objects.
+                // A geometry collection must have a member with the name "geometries".
+                // The value corresponding to "geometries" is an array.
+                // Each element in this array is a GeoJSON geometry object.
+                eprint!("Handling of GeoJson type '{}' not yet implemented", typ);
+            },
+            "Polygon" => {
+                eprint!("Handling of GeoJson type '{}' not yet implemented", typ);
+            },
+            "LineString" => {
+                // For type "LineString", the "coordinates" member must be an array of two or more positions.
+                eprint!("Handling of GeoJson type '{}' not yet implemented", typ);
+            },
+            _ => eprintln!("Unexpected type: {}", typ)
+        }
+    }
+    fn read_multi_polygon(&self, geometry: &Value) {
+        let mut pp = 0;
+        let polygons = geometry["coordinates"].as_array().unwrap();
+        for polygon in polygons {
+            pp = pp + 1;
+            // eprintln!("Feature: {} Polygon: {}", self.ff, pp);
+            let ring_array = polygon.as_array().unwrap();
+            let mut rr = 0;
+            for ring in ring_array {
+                rr = rr + 1;
+                // eprintln!("Feature: {} Polygon: {} Ring: {}", self.ff, pp, rr);
+                let mut cc = 0;
+                for coordinate in ring.as_array().unwrap() {
+                    // From the http://geojson.org/geojson-spec.html
+                    // * x, y, z order (easting, northing, altitude for coordinates in a projected coordinate reference system,
+                    // * or longitude, latitude, altitude for coordinates in a geographic coordinate reference system).
+                    //
+                    let lon = coordinate[0].as_f64().unwrap();
+                    let lat = coordinate[1].as_f64().unwrap();
+                    let lonlat = LonLatD::new(lon, lat).to_radians();
+                    use libwebmap::webmap::MapProjection;
+                    let point = self.projection.to_point_xy(lonlat);
+                    let command = match cc == 1 { true => "moveto", false => "drawto" };
+                    println!("{}    {}  {}", command, round7(point.x), round7(point.y));
+                    // eprintln!("Coordinate {} ->  lonlat={}   ->    point={}", coordinate, lonlat.round7(), point.round7());
+                    cc = cc + 1;
                 }
             }
         }
     }
-    Ok(())
 }

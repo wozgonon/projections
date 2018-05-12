@@ -138,24 +138,24 @@ impl LonLat {
     /// ```
     /// use libwebmap::webmap::LonLatD;
     /// use libwebmap::webmap::LonLat;
-    /// use libwebmap::webmap::round7_f64;
+    /// use libwebmap::webmap::round7;
     /// use std::f64::consts::PI;
     /// assert_eq!(LonLat::new(0.,0.), LonLat::zero());
     /// assert_eq!(LonLatD::new(0.,0.), LonLatD::zero());
     /// let quarter_pi = PI/4.0;
     /// let half_pi = PI/2.0;
     /// let bit = 0.1;
-    /// let bit_less = round7_f64(half_pi-bit);
-    /// let bit_more = round7_f64(PI+bit);
+    /// let bit_less = round7(half_pi-bit);
+    /// let bit_more = round7(PI+bit);
     ///
     /// let l1 = LonLat::new(quarter_pi,PI/2.);
     /// assert_eq!((l1.lon, l1.lat), (quarter_pi, PI/2.));
     /// let l2 = LonLat::new(quarter_pi, bit_less);
     /// assert_eq!((l2.lon, l2.lat), (quarter_pi, bit_less));
     /// let l3 = LonLat::new(bit_more,PI);
-    /// assert_eq!((round7_f64(l3.lon-bit), l3.lat), (0., 0.));
+    /// assert_eq!((round7(l3.lon-bit), l3.lat), (0., 0.));
     /// let l4 = LonLat::new(-bit_more,-PI);
-    /// assert_eq!((round7_f64(l4.lon+bit), l4.lat), (0., 0.));
+    /// assert_eq!((round7(l4.lon+bit), l4.lat), (0., 0.));
     /// let l5 = LonLat::new(-quarter_pi,-bit_less);
     /// assert_eq!((l5.lon, l5.lat), (-quarter_pi, -bit_less));
     /// ```
@@ -245,7 +245,7 @@ impl LonLat {
     ///  ```
     ///
     pub fn round7 (&self) -> LonLat {
-        return LonLat { lon : round7_f64(self.lon), lat : round7_f64(self.lat) };
+        return LonLat { lon : round7(self.lon), lat : round7(self.lat) };
     }
 
     ///
@@ -272,12 +272,12 @@ impl LonLat {
     /// ## Examples
     ///
     /// ```
-    /// use libwebmap::webmap::round6_f64;
+    /// use libwebmap::webmap::round6;
     /// use libwebmap::webmap::LonLat;
     /// use libwebmap::webmap::NORTH_MOST_LATITUDE;
     /// use libwebmap::webmap::SOUTH_MOST_LATITUDE;
-    /// assert_eq!(round6_f64(LonLat::radians_to_degrees(LonLat::max_latitude()) - NORTH_MOST_LATITUDE), 0.0);
-    /// assert_eq!(round6_f64(-LonLat::radians_to_degrees(LonLat::max_latitude()) - SOUTH_MOST_LATITUDE), 0.0);
+    /// assert_eq!(round6(LonLat::radians_to_degrees(LonLat::max_latitude()) - NORTH_MOST_LATITUDE), 0.0);
+    /// assert_eq!(round6(-LonLat::radians_to_degrees(LonLat::max_latitude()) - SOUTH_MOST_LATITUDE), 0.0);
     /// ```
     ///
     pub fn max_latitude ()-> f64  {
@@ -487,7 +487,7 @@ impl PointXY {
     ///  ```
     ///
     pub fn round7 (&self) -> PointXY {
-        return PointXY { x : round7_f64(self.x), y : round7_f64(self.y) };
+        return PointXY { x : round7(self.x), y : round7(self.y) };
     }
 }
 
@@ -994,18 +994,18 @@ impl<'a> WebMap<'a> {
 ///
 /// ```
 /// use std::f64::consts::PI;
-/// use libwebmap::webmap::round7_f64;
-/// assert_eq!(round7_f64 (0.), 0.);
-/// assert_eq!(round7_f64 (0.1234), 0.1234);
-/// assert_eq!(round7_f64 (0.123456789), 0.1234567);
-/// assert_eq!(round7_f64 (PI), 3.1415926);
+/// use libwebmap::webmap::round7;
+/// assert_eq!(round7 (0.), 0.);
+/// assert_eq!(round7 (0.1234), 0.1234);
+/// assert_eq!(round7 (0.123456789), 0.1234567);
+/// assert_eq!(round7 (PI), 3.1415926);
 /// ```
 ///
-pub fn round7_f64 (value : f64) -> f64 {
+pub fn round7(value : f64) -> f64 {
     let precision = 10_000_000.;
     (value * precision as f64).trunc() / precision
 }
-pub fn round6_f64 (value : f64) -> f64 {
+pub fn round6(value : f64) -> f64 {
     let precision = 1_000_000.;
     (value * precision as f64).trunc() / precision
 }
