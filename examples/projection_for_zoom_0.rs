@@ -1,7 +1,7 @@
 extern crate libwebmap;
 
-use libwebmap::webmap::LonLat;
 use libwebmap::webmap::WebMap;
+use libwebmap::webmap::LonLatD;
 use libwebmap::webmap::WebMercator;
 
 ///
@@ -19,7 +19,7 @@ fn main() {
     for step in 0..steps+1 {
         let lon = -180. + lon_increment * step as f64;
         let lat = 90. - lat_increment * step as f64;
-        let lonlat = LonLat::new(lon, lat);
+        let lonlat = LonLatD::new(lon, lat).to_radians();
         let point = webmap.to_point_xy(lonlat);
         let (x, y) = point.to_pixel_coordinates ();
         println!("{:2}.   lon:{:4} -> x:{:.4} ({:3})  lat:{:4} -> y:{:.4} ({:3})", step, lon, point.x, x, lat, point.y, y);

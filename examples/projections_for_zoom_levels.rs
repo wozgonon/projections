@@ -1,5 +1,6 @@
 extern crate libwebmap;
 
+use libwebmap::webmap::LonLatD;
 use libwebmap::webmap::LonLat;
 use libwebmap::webmap::WebMap;
 use libwebmap::webmap::WebMercator;
@@ -23,7 +24,7 @@ fn main() {
         let lon = -180. + lon_increment * step as f64;
         let lat = 90. - lat_increment * step as f64;
         print!("{:4}  {:4}  {:4}", step, lon, lat);
-        let lonlat = LonLat::new(lon, lat);
+        let lonlat = LonLatD::new(lon, lat).to_radians();
         for zoom in 0..levels {
             let projection = WebMercator {};
             let webmap = WebMap::new(zoom, Box::new(projection));
