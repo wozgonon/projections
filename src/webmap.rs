@@ -20,7 +20,7 @@ use std::f64::consts::PI;
 use std::fmt::Display;
 use std::fmt;
 
-pub const GREENWICH_MERIDIAN: f64 = 0.0;
+pub const PRIME_MERIDIAN: f64 = 0.0;
 pub const INTERNATIONAL_DATE_LINE: f64 = 180.0;
 pub const LATITUDE_OF_EQUATOR: f64 = 0.0;
 pub const NORTH_MOST_LATITUDE: f64 = 85.0511287798066;  // Wikipedia says 85.051129
@@ -110,6 +110,7 @@ impl Degree {
 }
 ///
 ///  A coordinate, in [Radians](https://en.wikipedia.org/wiki/Radian), on the surface of the earth (or another such body),
+///  * [Geographic latitude and longitude](https://en.wikipedia.org/wiki/Geographic_coordinate_system#Geographic_latitude_and_longitude).
 ///
 #[derive(Clone, Copy)]
 #[derive(Debug)]
@@ -326,7 +327,8 @@ pub struct LonLatD {
 }
 
 ///
-///  A coordinate, in [Degrees](https://en.wikipedia.org/wiki/Degree_(angle)), on the surface of the earth (or another planet,
+///  A coordinate, in [Degrees](https://en.wikipedia.org/wiki/Degree_(angle)), on the surface of the earth (or another planet.
+/// * Longitude and Latitude for coordinates in a [geographic coordinate reference system](http://resources.esri.com/help/9.3/ArcGISEngine/dotnet/89b720a5-7339-44b0-8b58-0f5bf2843393.htm#GeographicCoordSys).
 ///
 impl LonLatD {
     ///
@@ -410,6 +412,8 @@ impl LonLatD {
 
 ///
 ///  A point of a 2D surface.
+///  * Easting, northing for coordinates in a [projected coordinate reference system](http://resources.esri.com/help/9.3/ArcGISEngine/dotnet/89b720a5-7339-44b0-8b58-0f5bf2843393.htm#ProjectedCoordSys)
+///
 ///
 #[derive(Clone, Copy)]
 #[derive(Debug)]
@@ -1030,7 +1034,7 @@ mod tests {
     use webmap::LonLatD;
     use webmap::WebMap;
     use webmap::WebMercator;
-    use webmap::GREENWICH_MERIDIAN;
+    use webmap::PRIME_MERIDIAN;
     use webmap::INTERNATIONAL_DATE_LINE;
     use webmap::NORTH_MOST_LATITUDE;
     use webmap::SOUTH_MOST_LATITUDE;
@@ -1042,7 +1046,7 @@ mod tests {
         let projection = WebMercator {};
         let webmap = WebMap::new (zoom, Box::new(projection));
 
-        let atlantic : LonLat = LonLatD::new (GREENWICH_MERIDIAN, LATITUDE_OF_EQUATOR).to_radians ();
+        let atlantic : LonLat = LonLatD::new (PRIME_MERIDIAN, LATITUDE_OF_EQUATOR).to_radians ();
         let pacific : LonLat = LonLatD::new (INTERNATIONAL_DATE_LINE, LATITUDE_OF_EQUATOR).to_radians ();
 
         assert_float_eq!(webmap.to_point_xy (atlantic), PointXY::new(0.5,0.5));
@@ -1080,8 +1084,8 @@ mod tests {
         let projection = WebMercator {};
         let webmap = WebMap::new (zoom, Box::new(projection));
 
-        let north_pole : LonLat  = LonLatD::new (GREENWICH_MERIDIAN, 90.).to_radians ();
-        let south_pole : LonLat  = LonLatD::new (GREENWICH_MERIDIAN, -90.).to_radians ();
+        let north_pole : LonLat  = LonLatD::new (PRIME_MERIDIAN, 90.).to_radians ();
+        let south_pole : LonLat  = LonLatD::new (PRIME_MERIDIAN, -90.).to_radians ();
 
         assert_eq!(webmap.to_point_xy (north_pole).round7(), PointXY::new(0.5, INFINITY).round7());
         assert_eq!(webmap.to_point_xy (south_pole).round7(), PointXY::new(0.5, -INFINITY).round7());

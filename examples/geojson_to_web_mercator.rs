@@ -35,6 +35,7 @@ use serde_json::{Value, Error};
 
 
 use std::fs::File;
+use std::f64::INFINITY;
 
 fn main() {
 
@@ -56,12 +57,21 @@ fn main() {
 
 struct GeoJsonReader {
     features: u32,
+    max_x : f64,
+    max_y : f64,
+    min_x : f64,
+    min_y : f64,
     projection :  WebMercator
 }
 
 impl GeoJsonReader {
     pub fn new() -> GeoJsonReader {
-        GeoJsonReader { features: 0, projection: WebMercator {} }
+        GeoJsonReader { features: 0,
+            max_x : -INFINITY,
+            max_y : -INFINITY,
+            min_x : INFINITY,
+            min_y : INFINITY,
+            projection: WebMercator {} }
     }
     pub fn read_from_file(&mut self, path: &String) -> Result<(), Error> {
         eprintln!("Reading file: {}", path);
@@ -84,6 +94,8 @@ impl GeoJsonReader {
                 for feature in feature_array {
                     self.read_feature_collection(feature);
                 }
+                self.print ("topleft", self.min_x, self.min_y);
+                self.print ("bottomright", self.max_x, self.max_y);
             },
             _ => eprintln!("Expected a FeatureCollection, not: {}", typ)
         }
@@ -135,7 +147,7 @@ impl GeoJsonReader {
             _ => eprintln!("Unexpected type: {}", typ)
         }
     }
-    fn read_multi_polygon(&self, geometry: &Value) {
+    fn read_multi_polygon(&mut self, geometry: &Value) {
         let mut pp = 0;
         let polygons = geometry["coordinates"].as_array().unwrap();
         for polygon in polygons {
@@ -145,36 +157,52 @@ impl GeoJsonReader {
             self.read_rings(ring_array);
         }
     }
-    fn read_polygon(&self, geometry: &Value) {
+    fn read_polygon(&mut self, geometry: &Value) {
         let ring_array = geometry["coordinates"].as_array().unwrap();
         self.read_rings(ring_array);
     }
-    fn read_rings(&self, ring_array: &Vec<Value>) {
+    fn read_rings(&mut self, ring_array: &Vec<Value>) {
         let mut rr = 0;
         for ring in ring_array {
             rr = rr + 1;
             // eprintln!("Feature: {} Polygon: {} Ring: {}", self.ff, pp, rr);
             let mut cc = 0;
             for coordinate in ring.as_array().unwrap() {
-                // From the http://geojson.org/geojson-spec.html
-                // * x, y, z order (easting, northing, altitude for coordinates in a projected coordinate reference system,
-                // * or longitude, latitude, altitude for coordinates in a geographic coordinate reference system).
-                //
                 let lon = coordinate[0].as_f64().unwrap();
                 let lat = coordinate[1].as_f64().unwrap();
-                let lonlat = LonLatD::new(lon, lat).to_radians();
-                use libwebmap::webmap::MapProjection;
-                let point = self.projection.to_point_xy(lonlat);
+                //if lon.abs() > 360.0 || lat.abs() > 90.0 {
+                    // From the http://geojson.org/geojson-spec.html
+                    // * x, y, z order (easting, northing, altitude for coordinates in a projected coordinate reference system,
+                //} else {
+                    // * or longitude, latitude, altitude for coordinates in a geographic coordinate reference system).
+                //}
                 let command = match cc == 0 {
                     true => "moveto",
                     false => "drawto"
                 };
-                let tab = "	";
-                println!("{}{}{}{}{}", command, tab, round7(point.x), tab, round7(point.y));
-                // eprintln!("Coordinate {} ->  lonlat={}   ->    point={}", coordinate, lonlat.round7(), point.round7());
+                self.project_to_xy (command, lon, lat);
                 cc = cc + 1;
             }
         }
+    }
+    fn project_to_xy (&mut self, command : &str, lon : f64, lat : f64) {
+        let lonlat = LonLatD::new(lon, lat).to_radians();
+        use libwebmap::webmap::MapProjection;
+        let point = self.projection.to_point_xy(lonlat);
+        if point.x.is_infinite() || point.y.is_infinite() {
+            eprintln!("Ignoring point projected to infinity: {}", point);
+        } else {
+            self.max_x = point.x.max(self.max_x);
+            self.min_x = point.x.min(self.min_x);
+            self.max_y = point.y.max(self.max_y);
+            self.min_y = point.y.min(self.min_y);
+            self.print(command, point.x, point.y);
+        }
+    }
+    fn print(&self, command : &str, x : f64, y : f64) {
+        let tab = "	";
+        println!("{}{}{}{}{}", command, tab, round7(x), tab, round7(y));
+        // eprintln!("Coordinate {} ->  lonlat={}   ->    point={}", coordinate, lonlat.round7(), point.round7());
     }
 }
 
