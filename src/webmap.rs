@@ -119,6 +119,12 @@ pub struct LonLat {
     pub lat : f64
 }
 
+impl Display for LonLat {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {})", self.lon, self.lat)
+    }
+}
+
 impl LonLat {
 
     ///

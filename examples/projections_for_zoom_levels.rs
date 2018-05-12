@@ -1,7 +1,6 @@
 extern crate libwebmap;
 
 use libwebmap::webmap::LonLatD;
-use libwebmap::webmap::LonLat;
 use libwebmap::webmap::WebMap;
 use libwebmap::webmap::WebMercator;
 

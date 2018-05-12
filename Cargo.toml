@@ -12,3 +12,5 @@ name = "webmap"
 path = "bin/webmap.rs"
 
 [dependencies]
+serde_json = "1.0.17"
+serde = "1.0.54"

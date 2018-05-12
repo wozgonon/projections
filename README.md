@@ -19,5 +19,13 @@ $ cargo install
 ## Web Mercator
 
 
+### A Geojson example
+
+To parse a [GeoJson](http://geojson.org/) file and project the coordinates to a web mercator projection:
+
+```
+$ cargo build --examples && ./target/debug/examples/geojson_to_web_mercator <file name>[.geo].json
+```
+
 ## Mercator
 
