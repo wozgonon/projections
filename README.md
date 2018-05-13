@@ -30,7 +30,7 @@ $ cargo build --examples && ./target/debug/examples/geojson_to_web_mercator <fil
 ### Javascript
 
 
-How to render a picture of [Scotland](doc/scotland1.png):
+How to render a picture of [Scotland](doc/scotland_v2.png):
 
 ```
 $ wget https://github.com/martinjc/UK-GeoJSON/blob/master/json/electoral/sco/wpc.json
