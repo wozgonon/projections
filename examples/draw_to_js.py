@@ -2,6 +2,30 @@
 import fileinput
 
 print("""
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Map</title>
+    <style>
+      #canvas {
+         margin-left: 10px;
+         margin-top: 10px;
+         -webkit-box-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+         -moz-box-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+         box-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+         background: #ffffff;
+         cursor: pointer;
+      }
+    </style>
+  </head>
+
+   <body>
+      <canvas id='canvas' width='800' height='700'/>
+      <script>
+
+
 var c=document.getElementById("canvas");
 var ctx=c.getContext("2d");
 ctx.beginPath();
@@ -83,6 +107,10 @@ print("""
          
 ctx.stroke();
 ctx.restore();
+
+      </script>
+  </body>
+</html>
 """)
 
       
