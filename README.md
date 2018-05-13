@@ -15,6 +15,13 @@ $ cargo test --doc          # To just run the doctests
 $ cargo install
 ```
 
+## Gallery
+
+In (Web Mercator](https://en.wikipedia.org/wiki/Web_Mercator) projection:
+
+* [Scotland](doc/scotland_v2.png):
+* [Boulder Colerado](doc/bouldercolerado_v1.png):
+* [The wolrd](doc/world_v1.png):
 
 ## Web Mercator
 
@@ -42,4 +49,5 @@ Then place the following URL in your web browser:
 
 
 ## Mercator
+
 
