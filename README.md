@@ -23,6 +23,11 @@ In [Web Mercator](https://en.wikipedia.org/wiki/Web_Mercator) projection:
 * [Boulder Colerado](doc/bouldercolerado_v1.png):
 * [The world](doc/world_v1.png):
 
+In [Sinusoidal](http://mathworld.wolfram.com/SinusoidalProjection.html) projection:
+
+* [The world](doc/world_sinusoidal_v1.png) - this needs work :-)
+
+
 ## Web Mercator
 
 

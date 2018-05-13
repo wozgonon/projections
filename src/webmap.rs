@@ -805,13 +805,13 @@ impl MapProjection for Sinusoidal {
     /// use libwebmap::webmap::LonLat;
     /// use libwebmap::webmap::MapProjection;
     /// let projection = Sinusoidal {};
-    /// // TODO for lonlat in LonLat::significant_points().iter() {
-    ///  // TODO   assert_eq!(projection.to_lonlat(projection.to_point_xy(*lonlat)).round7(), lonlat.round7());
-    /// // TODO }
+    /// for lonlat in LonLat::significant_points().iter() {
+    ///    assert_eq!(projection.to_lonlat(projection.to_point_xy(*lonlat)).round7(), lonlat.round7());
+    /// }
     /// ```
     ///
     fn to_lonlat (&self, point : PointXY) -> LonLat {
-        LonLat::new (point.x.acos() + self.centre().lon, point.y)
+        LonLat::new (point.x/point.y.cos() + self.centre().lon, point.y)
     }
 }
 

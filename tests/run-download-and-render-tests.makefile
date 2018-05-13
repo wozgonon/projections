@@ -17,6 +17,11 @@ ${DIR}/scotland.html: ${DIR}/wpc.json
 ${DIR}/bouldercolerado.html: ${DIR}/bouldercolerado.geo.json
 	${MERCATOR} $< | ${DRAW} > $@
 
+world: ${DIR}/world.html
+
+${DIR}/world.html: ../data/custom.geo.json
+	${MERCATOR} $< | ${DRAW} > $@
+
 ${DIR}/wpc.json:
 	curl --silent -o $@ https://raw.githubusercontent.com/martinjc/UK-GeoJSON/master/json/electoral/sco/wpc.json
 
