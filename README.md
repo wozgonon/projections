@@ -17,11 +17,11 @@ $ cargo install
 
 ## Gallery
 
-In (Web Mercator](https://en.wikipedia.org/wiki/Web_Mercator) projection:
+In [Web Mercator](https://en.wikipedia.org/wiki/Web_Mercator) projection:
 
 * [Scotland](doc/scotland_v2.png):
 * [Boulder Colerado](doc/bouldercolerado_v1.png):
-* [The wolrd](doc/world_v1.png):
+* [The world](doc/world_v1.png):
 
 ## Web Mercator
 
