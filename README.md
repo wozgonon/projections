@@ -34,7 +34,7 @@ How to render a picture of [Scotland](doc/scotland1.png):
 
 ```
 $ wget https://github.com/martinjc/UK-GeoJSON/blob/master/json/electoral/sco/wpc.json
-$ cargo build --examples && ./target/debug/examples/geojson_to_web_mercator data/wpc.json | ./examples/draw_to_js.py > examples/_scotland.js
+$ cargo build --examples && ./target/debug/examples/geojson_to_web_mercator wpc.json | ./examples/draw_to_js.py > examples/_scotland.js
 ```
 
 Then place the following URL in your web browser:

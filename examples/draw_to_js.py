@@ -12,26 +12,39 @@ ctx.lineWidth = 1.0;
 
 function draw_all (min_x, min_y, max_x, max_y) {
 
-ww = max_y-min_y;
-hh = max_x-max_y;
+    ww = max_x-min_x;
+    hh = max_y-min_y;
 
-length =  canvas.width > canvas.height ? canvas.height : canvas.width;
-x_scale  = length / ww;
-y_scale  = length / hh;
-scale = x_scale > y_scale ? x_scale : y_scale;
+    length =  canvas.width > canvas.height ? canvas.height : canvas.width;
+    x_scale  = length / ww;
+    y_scale  = length / hh;
+    scale = x_scale < y_scale ? x_scale : y_scale;
 
-x_offset = min_x * scale;
-y_offset = min_y * scale;
-//x_offset = (canvas.width  - ww * scale)/2
-//y_offset = (canvas.height - hh * scale)/2
+    xo=(canvas.width - ww * scale)/2;
+    yo=(canvas.height - hh * scale)/2;
 
-ctx.beginPath();
+    x_offset = min_x*scale - xo;
+    y_offset = min_y*scale - yo;
 
-ctx.fillText("scale=" + scale, (canvas.width / 2) - 17, (canvas.height / 2) - 18);
-ctx.fillText("x_scale=" + y_scale, (canvas.width / 2) - 17, (canvas.height / 2) +20 );
-ctx.fillText("y_scale=" + x_scale, (canvas.width / 2) - 17, (canvas.height / 2) +60);
-ctx.fillText("x_offset=" + y_offset, (canvas.width / 2) - 17, (canvas.height / 2) +100);
-ctx.fillText("y_offset=" + y_offset, (canvas.width / 2) - 17, (canvas.height / 2) +140);
+    ctx.beginPath();
+
+    ctx.fillText("ww*scale=" + ww*scale,       20, canvas.height - 165);
+    ctx.fillText("hh*scale=" + hh*scale,       20, canvas.height - 150);
+    ctx.fillText("xo="       + xo,             20, canvas.height - 135);
+    ctx.fillText("yo="       + yo,             20, canvas.height - 120);
+    ctx.fillText("width="    + canvas.width,   20, canvas.height - 105);
+    ctx.fillText("height="   + canvas.height,  20, canvas.height - 90);
+    ctx.fillText("scale="    + scale,          20, canvas.height - 75);
+    ctx.fillText("x_scale="  + y_scale,        20, canvas.height - 60);
+    ctx.fillText("y_scale="  + x_scale,        20, canvas.height - 45);
+    ctx.fillText("x_offset=" + x_offset,       20, canvas.height - 30);
+    ctx.fillText("y_offset=" + y_offset,       20, canvas.height - 15);
+
+    now = new Date().toUTCString ();
+    title="Projections in rust (" + now + ")";
+    titleWidth=ctx.measureText(title + " ").width
+    titleHeight=ctx.measureText("M").width
+    ctx.fillText(title, canvas.width - titleWidth, canvas.height - titleHeight);
 
 """)
 
